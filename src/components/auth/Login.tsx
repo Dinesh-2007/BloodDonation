@@ -31,6 +31,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, users }) => {
       hospital: { email: 'hospital@example.com', password: 'hospital123' },
       donor: { email: 'donor@example.com', password: 'donor123' },
       requester: { email: 'requester@example.com', password: 'requester123' },
+      camp: { email: 'camp@bloodbank.com', password: 'camp123' },
     };
     
     const account = testAccounts[role as keyof typeof testAccounts];
@@ -203,7 +204,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, users }) => {
             <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '12px', textAlign: 'center' }}>
               Quick login for demo:
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
               <button
                 onClick={() => quickLogin('admin')}
                 style={{
@@ -263,6 +264,22 @@ export const Login: React.FC<LoginProps> = ({ onLogin, users }) => {
                 }}
               >
                 Requester
+              </button>
+              <button
+                onClick={() => quickLogin('camp')}
+                style={{
+                  padding: '8px 12px',
+                  fontSize: '12px',
+                  backgroundColor: '#f3f4f6',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  color: '#374151',
+                  gridColumn: 'span 2',
+                }}
+              >
+                Camp
               </button>
             </div>
           </div>

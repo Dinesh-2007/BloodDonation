@@ -1,5 +1,5 @@
 // User Roles
-export type UserRole = 'admin' | 'hospital' | 'donor' | 'requester';
+export type UserRole = 'admin' | 'hospital' | 'donor' | 'requester' | 'camp';
 
 // Blood Types
 export type BloodGroup = 'A+' | 'A-' | 'B+' | 'B-' | 'O+' | 'O-' | 'AB+' | 'AB-';
@@ -40,6 +40,7 @@ export interface Donor {
   preferredRadius: 5 | 10 | 25; // km
   totalDonations: number;
   createdAt: string;
+  mobile: string;
 }
 
 // Blood Inventory

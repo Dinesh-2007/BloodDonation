@@ -5,6 +5,7 @@ import { AdminDashboard } from './components/dashboards/AdminDashboard';
 import { HospitalDashboard } from './components/dashboards/HospitalDashboard';
 import { DonorDashboard } from './components/dashboards/DonorDashboard';
 import { RequesterDashboard } from './components/dashboards/RequesterDashboard';
+import CampDashboard from './components/dashboards/CampDashboard';
 import { mockUsers } from './data/users';
 import { User } from './types';
 import { LogOut, User as UserIcon } from 'lucide-react';
@@ -158,6 +159,18 @@ function App() {
         <Route 
           path="/login" 
           element={<LoginRoute currentUser={currentUser} onLogin={handleLogin} />} 
+        />
+
+        {/* Camp Route */}
+        <Route
+          path="/camp"
+          element={
+            <ProtectedRoute allowedRole="camp" currentUser={currentUser}>
+              <DashboardLayout currentUser={currentUser} onLogout={handleLogout}>
+                <CampDashboard />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
         />
 
         {/* Admin Route */}

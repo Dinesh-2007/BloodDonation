@@ -11,6 +11,15 @@ export const mockUsers: User[] = [
     createdAt: '2024-01-01T00:00:00Z',
   },
   {
+    id: 'user-camp-001',
+    email: 'camp@bloodbank.com',
+    password: 'camp123',
+    role: 'camp',
+    name: 'Blood Donation Camp Staff',
+    phone: '+91-9876543200',
+    createdAt: '2024-01-01T00:00:00Z',
+  },
+  {
     id: 'user-hospital-001',
     email: 'hospital@example.com',
     password: 'hospital123',
