@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { AlertCircle, Droplet, MapPin, Phone, Clock, CheckCircle } from 'lucide-react';
 import { Card, Table, Badge, Button } from '../common/UIComponents';
 import { mockBloodRequests } from '../../data/bloodRequests';
 import { mockHospitals } from '../../data/hospitals';
 import { mockNotifications } from '../../data/notifications';
-import { BloodGroup } from '../../types';
+import { BloodGroup, BloodRequest, Notification } from '../../types';
 import { formatDateTime, getStatusColor } from '../../utils/bloodMatchingEngine';
 
 interface RequesterDashboardProps {
@@ -12,6 +12,37 @@ interface RequesterDashboardProps {
 }
 
 export const RequesterDashboard: React.FC<RequesterDashboardProps> = ({ userId }) => {
+  const requestsStorageKey = `requester_requests_${userId}`;
+  const notificationsStorageKey = `requester_notifications_${userId}`;
+
+  const [requests, setRequests] = useState<BloodRequest[]>(() => {
+    const stored = localStorage.getItem(requestsStorageKey);
+    if (stored) {
+      try {
+        return JSON.parse(stored) as BloodRequest[];
+      } catch {
+        localStorage.removeItem(requestsStorageKey);
+      }
+    }
+    const initialRequests = mockBloodRequests.filter(r => r.requesterId === userId);
+    localStorage.setItem(requestsStorageKey, JSON.stringify(initialRequests));
+    return initialRequests;
+  });
+
+  const [notifications, setNotifications] = useState<Notification[]>(() => {
+    const stored = localStorage.getItem(notificationsStorageKey);
+    if (stored) {
+      try {
+        return JSON.parse(stored) as Notification[];
+      } catch {
+        localStorage.removeItem(notificationsStorageKey);
+      }
+    }
+    const initialNotifications = mockNotifications.filter(n => n.userId === userId);
+    localStorage.setItem(notificationsStorageKey, JSON.stringify(initialNotifications));
+    return initialNotifications;
+  });
+
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [formData, setFormData] = useState({
     patientName: '',
@@ -22,22 +53,80 @@ export const RequesterDashboard: React.FC<RequesterDashboardProps> = ({ userId }
     notes: '',
   });
 
-  // Get requests made by this user
-  const userRequests = mockBloodRequests.filter(r => r.requesterId === userId);
-  
   // Get notifications
-  const notifications = mockNotifications
-    .filter(n => n.userId === userId)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const sortedNotifications = useMemo(
+    () => [...notifications].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    [notifications]
+  );
+
+  // Get requests made by this user
+  const userRequests = useMemo(
+    () => requests
+      .filter(r => r.requesterId === userId)
+      .sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime()),
+    [requests, userId]
+  );
 
   const pendingRequests = userRequests.filter(r => r.status === 'pending');
   const completedRequests = userRequests.filter(r => r.status === 'completed');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Request submitted:', formData);
+
+    const hospital = mockHospitals.find(h => h.id === formData.hospitalId);
+    if (!hospital) {
+      return;
+    }
+
+    const newRequest: BloodRequest = {
+      id: `req-${Date.now()}`,
+      requesterId: userId,
+      patientName: formData.patientName.trim(),
+      bloodGroup: formData.bloodGroup,
+      unitsRequired: Number.isFinite(formData.unitsRequired) ? formData.unitsRequired : 1,
+      hospitalName: hospital.name,
+      hospitalId: hospital.id,
+      location: hospital.location,
+      urgency: formData.urgency,
+      status: 'pending',
+      requestDate: new Date().toISOString(),
+      fulfillmentDate: null,
+      assignedDonorId: null,
+      notes: formData.notes.trim(),
+    };
+
+    const updatedRequests = [newRequest, ...requests];
+    setRequests(updatedRequests);
+    localStorage.setItem(requestsStorageKey, JSON.stringify(updatedRequests));
+
+    const newNotification: Notification = {
+      id: `notif-${Date.now()}`,
+      userId,
+      type: 'request-update',
+      title: 'Request Acknowledged',
+      message: `Your ${formData.urgency} blood request for ${formData.bloodGroup} has been received and is being processed.`,
+      read: false,
+      createdAt: new Date().toISOString(),
+      metadata: {
+        requestId: newRequest.id,
+        bloodGroup: newRequest.bloodGroup,
+        hospitalId: newRequest.hospitalId,
+      },
+    };
+
+    const updatedNotifications = [newNotification, ...notifications];
+    setNotifications(updatedNotifications);
+    localStorage.setItem(notificationsStorageKey, JSON.stringify(updatedNotifications));
+
+    setFormData({
+      patientName: '',
+      bloodGroup: 'O+',
+      unitsRequired: 1,
+      hospitalId: '',
+      urgency: 'normal',
+      notes: '',
+    });
     setShowRequestForm(false);
-    // In real app, this would create a new request
   };
 
   return (
@@ -429,7 +518,7 @@ export const RequesterDashboard: React.FC<RequesterDashboardProps> = ({ userId }
             Notifications
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {notifications.slice(0, 5).map(notif => (
+            {sortedNotifications.slice(0, 5).map(notif => (
               <div key={notif.id} style={{
                 padding: '12px',
                 backgroundColor: notif.read ? '#f9fafb' : '#eff6ff',
